@@ -196,9 +196,6 @@ SpringBootMicroservices/
 
 ---
 
-## 📸 Screenshots
-
-<!-- Add your screenshots in docs/screenshots/ then remove this comment line and the closing one below.
 
 | Eureka dashboard | API Gateway request |
 |---|---|
@@ -206,13 +203,13 @@ SpringBootMicroservices/
 
 -->
 
----
+
 
 ## 👩‍💻 Author
 
 **Raja Aifa**
 
-🎓 Professional Master's Degree in Web Services and Multimedia, ISITCOM (Higher Institute of Computer Science and Communication Technologies of Hammam Sousse), Tunisia
+🎓 Professional Master's Degree in Web Services and Multimedia,Tunisia
 
 ---
 
