@@ -1,376 +1,221 @@
-# Spring Boot Microservice Example(Eureka Server, Config Server, API Gateway, Services , RabbitMq, Keycloak)
+# 🧩 SpringBootMicroservices
 
-<img src="screenshots/springbootmicroservices.drawio_image.png" alt="Main Information" width="800" height="900">
+**A microservices-based backend system built with Spring Boot and Spring Cloud, featuring service discovery, centralized configuration, an API gateway, Keycloak-based authentication, RabbitMQ messaging, and MySQL persistence.**
 
-# About the project
-<ul style="list-style-type:disc">
-  <li>User can register and login through Keycloak</li>
-  <li>User can register and login through Keycloak</li>
-  <li>Admin can create, update, delete advertisement and get advertisement by its is and get all advertisements from management service to advertisement service through API Gateway</li>
-  <li>Admin can approve and reject advertisement from advertisement service to report service by using managment service through API Gateway</li>
-  <li>User canget advertisement by its is and get all advertisements from management service to advertisement service through API Gateway</li>
-  <li>The view count of the approved advertisement are increasing when user try to show it</li>
-</ul>
+![Java](https://img.shields.io/badge/Java-8+-orange?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-microservices-6DB33F?style=flat-square)
+![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-Eureka%20%7C%20Config%20%7C%20Gateway-6DB33F?style=flat-square)
+![Keycloak](https://img.shields.io/badge/Keycloak-security-4D4D4D?style=flat-square)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-messaging-FF6600?style=flat-square)
+![MySQL](https://img.shields.io/badge/MySQL-database-4479A1?style=flat-square)
 
-7 services whose name are shown below have been devised within the scope of this project.
+---
 
-- Config Server
-- Eureka Server
-- API Gateway
-- User Service
-- Management Service
-- Advertisement Service
-- Report Service
+## 📖 Overview
 
-### 🔨 Run the App
+This project implements a microservices architecture composed of **seven independent Spring Boot applications**:
 
-<b>Docker</b>
+| Service | Role |
+|---|---|
+| **Discovery Server** | Eureka server for service registration and discovery |
+| **Config Server** | Spring Cloud Config server serving centralized configuration to all services from a native (classpath) source |
+| **API Gateway** | Spring Cloud Gateway routing incoming requests to the right downstream service based on path predicates |
+| **User Service** | Manages user data, backed by MySQL and secured with Keycloak |
+| **Advertisement Service** | Manages advertisements, backed by MySQL, secured with Keycloak, and publishes / consumes events via RabbitMQ |
+| **Management Service** | Handles management operations, secured with Keycloak, with circuit breaker support via Resilience4j and health monitoring via Spring Boot Actuator |
+| **Report Service** | Generates reports, backed by MySQL, secured with Keycloak, and integrated with RabbitMQ messaging |
 
-<b>1 )</b> Install <b>Docker Desktop</b>. Here is the installation <b>link</b> : https://docs.docker.com/docker-for-windows/install/
+All business services register with Eureka, pull their configuration from the Config Server, and are protected by Keycloak.
 
-<b>2 )</b> Open <b>Terminal</b> under <b>resources</b> folder to run <b>Keycloak</b> and <b>RabbitMq</b> on <b>Docker</b> Container
-```
-    docker-compose up -d
-```
-<b>3 )</b> Implement Keycloak Settings
-```
-    1 ) Open Keycloak on the Browser through localhost:8181
-    2 ) Enter username and password (admin : admin)
-    3 ) Create Client named for spring-boot-microservice-keycloak and define it in Keycloak config of user service
-    4 ) Change client's access type from public to confidential
-    5 ) Get secret key to define clientSecret in Keycloak config of user service
-    6 ) Define roles for Admin and User as ROLE_ADMIN and ROLE_USER
-```
+---
 
-<b>4 )</b> Implement Rabbitmq Settings
-```
-    1 ) Open Rabbitmq on the Browser through http://localhost:15672
-    2 ) Enter username and password (rabbitmq : 123456)
-    3 ) Open Admin section in the navbar
-    4 ) Define new user named guest and its username , password (guest : guest , role : administrator) , next give all permissiion (Virtual host : "/" , regexp : ".*")
-```
+## 🏗️ Architecture
 
-<b>Maven></b>
+```text
+                          ┌──────────────────────┐
+        Client ─────────► │   API Gateway :8600  │
+                          └──────────┬───────────┘
+                                     │ routes by path
+        ┌──────────────┬─────────────┼───────────────┬────────────────┐
+        ▼              ▼             ▼               ▼                │
+  User Service   Advertisement   Management      Report Service       │
+     :9000        Service :9001  Service :9002       :9003            │
+        │              │  ▲          │                │ ▲            │
+        │              ▼  │          │                ▼ │            │
+        │            RabbitMQ ◄──────┼────────────────┘              │
+        ▼              ▼                                              │
+      MySQL          MySQL                    Keycloak (auth) ◄───────┘
 
-<b>1 )</b> Start Keycloak and Rabbit through Docker
-
-<b>2 )</b> Implement their settings
-
-<b>3 )</b> Download your project from this link `https://github.com/Rapter1990/SpringBootMicroservices`
-
-<b>4 )</b> Go to the project's home directory :  `cd SpringBootMicroservices`
-
-<b>5 )</b> Create a jar file though this command `mvn clean install`
-
-<b>6 )</b> Run the project though this command `mvn spring-boot:run`
-
-
-### To execute the API's through the gateway
-    1) http://localhost:8600/api/v1/users/signup
-    2) http://localhost:8600/api/v1/users/login
-    3) http://localhost:8600/api/v1/users/info 
-    4) http://localhost:8600/api/v1/management/admin_role/create/{user_id} 
-    5) http://localhost:8600/api/v1/management/admin_role/alladvertisements
-    6) http://localhost:8600/api/v1/management/admin_role/alladvertisements/{advertisement_id} 
-    7) http://localhost:8600/api/v1/management/admin_role/update/{advertisement_id}
-    8) http://localhost:8600/api/v1/management/admin_role/delete/{advertisement_id} 
-    9) http://localhost:8600/api/v1/management/admin_role/advertisement/{advertisement_id}/approve
-    10) http://localhost:8600/api/v1/management/admin_role/advertisement/{advertisement_id}/reject
-    11) http://localhost:8600/api/v1/management/user_role/alladvertisements
-    12) http://localhost:8600/api/v1/management/user_role/advertisement/{advertisement_id} 
-    
-
-Explore Rest APIs
-<table style="width:100%">
-  <tr>
-      <th>Method</th>
-      <th>Url</th>
-      <th>Description</th>
-      <th>Valid Request Body</th>
-      <th>Valid Request Params</th>
-      <th>Valid Request Params and Body</th>
-      <th>No Request or Params</th>
-  </tr>
-  <tr>
-      <td>POST</td>
-      <td>signup</td>
-      <td>Sign Up for User and Admin</td>
-      <td><a href="README.md#signup">Info</a></td>
-      <td></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>POST</td>
-      <td>login</td>
-      <td>Login</td>
-      <td><a href="README.md#login">Info</a></td>
-      <td></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>info</td>
-      <td>Get User's Role Information (ROLE_USER or ROLE_ADMIN)</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td><a href="README.md#info">Info</a></td>
-  </tr>
-  <tr>
-     <td>POST</td>
-     <td>create/{user_id}</td>
-     <td>Create Advertisement for User</td>
-     <td></td>
-     <td></td>
-     <td><a href="README.md#create">Info</a></td>
-     <td></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>alladvertisements</td>
-      <td>Get all advertisements From Admin</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td><a href="README.md#alladvertisementsFromAdmin">Info</a></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>alladvertisements/{advertisement_id}</td>
-      <td>Get advertisement by Id From Admin</td>
-      <td></td>
-      <td><a href="README.md#advertisementById">Info</a></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>PUT</td>
-      <td>update/{advertisement_id}</td>
-      <td>Update advertisement by Id</td>
-      <td></td>
-      <td></td>
-      <td><a href="README.md#update">Info</a></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>DELETE</td>
-      <td>delete/{advertisement_id} </td>
-      <td>Delete advertisement by Id</td>
-      <td></td>
-      <td><a href="README.md#delete">Info</a></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>advertisement/{advertisement_id}/approve</td>
-      <td>Approve advertisement By Id</td>
-      <td></td>
-      <td><a href="README.md#approve">Info</a></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>advertisement/{advertisement_id}/reject</td>
-      <td>Reject advertisement By Id</td>
-      <td></td>
-      <td><a href="README.md#reject">Info</a></td>
-      <td></td>
-      <td></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>alladvertisements</td>
-      <td>Get all advertisements From User</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td><a href="README.md#alladvertisementsFromUser">Info</a></td>
-  </tr>
-  <tr>
-      <td>GET</td>
-      <td>alladvertisements</td>
-      <td>alladvertisements/{advertisement_id}</td>
-      <td></td>
-      <td></td>
-      <td></td>
-      <td><a href="README.md#advertisementByIdFromUser">Info</a></td>
-  </tr>
-</table>
-
-
-### Used Dependencies
-* Core
-  * Spring
-    * Spring Boot
-    * Spring Security
-    * Spring Web
-      * RestTemplate
-    * Spring Data
-      * Spring Data JPA
-    * Spring Cloud
-      * Spring Cloud Gateway Server
-      * Spring Cloud Config Server
-      * Spring Cloud Config Client
-  * Netflix
-    * Eureka Server
-    * Eureka Client
-* Database
-  * Mysql
-* Message Broker
-  * RabbitMQ
-* Security
-  * Keycloak Server
-  * Keycloak OAuth2
-  * Keycloak REST API
-
-## Valid Request Body
-
-##### <a id="signup">Sign Up for User and Admin
-```
-    http://localhost:8600/api/v1/users/signup
-
-    {
-        "username" : "springbootmicroserviceuser",
-        "password" : "user123456",
-        "name" : "Micro User",
-        "surname" : "User Surname",
-        "phoneNumber" : "123456789",
-        "email" : "springbootmicroserviceuser@user.com",
-        "role" : "ROLE_USER"
-    }
-
-    http://localhost:8600/api/v1/users/signup
-
-    {
-        "username" : "springbootmicroserviceadmin",
-        "password" : "admin123456",
-        "name" : "Micro Admin",
-        "surname" : "Admin Surname",
-        "phoneNumber" : "123456789",
-        "email" : "springbootmicroserviceadmin@admin.com",
-        "role" : "ROLE_ADMIN"
-    }
+  Every service ──► registers with Discovery Server (Eureka) :8761
+  Every service ──► loads its configuration from Config Server :9191
 ```
 
-##### <a id="login">Login
-```
-    http://localhost:8600/api/v1/users/login
-    Bearer Token : Access Token of User from Keycloak
-    {
-        "username" : "springbootmicroserviceuser",
-        "password" : "user123456"
-    }
+---
 
-    http://localhost:8600/api/v1/users/login
-    Bearer Token : Access Token of Admin from Keycloak
-    {
-        "username" : "springbootmicroserviceadmin",
-        "password" : "admin123456"
-    }
-```
+## 🛠️ Technologies Used
 
-## Valid Request Params
+| Layer | Technology |
+|---|---|
+| Language | Java |
+| Framework | Spring Boot, Spring Cloud (Config, Gateway, Netflix Eureka) |
+| Security | Keycloak (`spring-boot-starter-security`, `keycloak-spring-boot-starter`, `keycloak-admin-client`) |
+| Persistence | Spring Data JPA, MySQL (`mysql-connector-java`) |
+| Messaging | RabbitMQ (`spring-boot-starter-amqp`) |
+| Resilience and monitoring | Resilience4j (circuit breaker), Spring Boot Actuator |
+| Build tool | Maven |
+| Other | Lombok |
 
-##### <a id="advertisementById">Get advertisement by Id From Admin
-```
-    http://localhost:8600/api/v1/management/admin_role/alladvertisements/{advertisement_id} 
-    Bearer Token : Access Token of Admin from Keycloak
-```
+---
 
-##### <a id="delete">Delete advertisement by Id 
-```
-    http://localhost:8600/api/v1/management/admin_role/delete/{advertisement_id} 
-    Bearer Token : Access Token of Admin from Keycloak
-```
+## 📋 Prerequisites
 
-##### <a id="approve">Approve advertisement By Id
-```
-    http://localhost:8600/api/v1/management/admin_role/advertisement/{advertisement_id}/approve
-    Bearer Token : Access Token of Admin from Keycloak
-```
+- Java 8+ (JDK)
+- Maven 3.6+
+- MySQL Server
+- RabbitMQ Server
+- Keycloak Server
 
-##### <a id="reject">Reject advertisement By Id
-```
-    http://localhost:8600/api/v1/management/admin_role/advertisement/{advertisement_id}/reject
-    Bearer Token : Access Token of Admin from Keycloak
-```
+---
 
-##### <a id="advertisementByIdFromUser">Get advertisement by Id From User
-```
-    http://localhost:8600/api/v1/management/user_role/alladvertisements/{advertisement_id} 
-    Bearer Token : Access Token of Admin from Keycloak
-```
+## 🔌 Services and Ports
 
-## Valid Request Params and Body
+| Service | Port | Description |
+|---|---|---|
+| Discovery Server (Eureka) | 8761 | Service registry |
+| Config Server | 9191 | Centralized configuration |
+| API Gateway | 8600 | Entry point / routing |
+| User Service | 9000 | User management |
+| Advertisement Service | 9001 | Advertisement management |
+| Management Service | 9002 | Management operations |
+| Report Service | 9003 | Report generation |
 
-##### <a id="create">Create Advertisement for User
-```
-    http://localhost:8600/api/v1/management/admin_role/create/{user_id} 
-    Bearer Token : Access Token from Keycloak
-    {
-        "title" : "Advertisement 1 for User 1",
-        "price" : 200
-    }
+---
+
+## 🚀 Run Locally
+
+### 1. Clone the project
+
+```bash
+git clone https://github.com/RajaAifa/SpringBootMicroservices.git
+cd SpringBootMicroservices
 ```
 
-##### <a id="update">Create Route by City Id and Destination City Id
-```
-    http://localhost:8600/api/v1/management/admin_role/update/{advertisement_id}
-    Bearer Token : Access Token from Keycloak 
-    {
-        "title" : "Advertisement 1 for User 1 Updated",
-        "price" : 300
-    }
+### 2. Build all modules
+
+```bash
+mvn clean install
 ```
 
-## No Request or Params
+### 3. Start the infrastructure
 
-##### <a id="info"> Get User's Role Information (ROLE_USER or ROLE_ADMIN)
-```
-    http://localhost:8600/api/v1/users/info
-    Bearer Token : Access Token of Admin or User from Keycloak 
-```
+Start **MySQL**, **RabbitMQ** and **Keycloak** before starting the services.
 
-##### <a id="alladvertisementsFromAdmin"> Get all advertisements From Admin
-```
-    http://localhost:8600/api/v1/management/admin_role/alladvertisements
-    Bearer Token : Access Token of Admin from Keycloak 
+A `docker-compose.yml` is provided for **Keycloak** and **RabbitMQ**:
+
+```bash
+docker compose up -d
 ```
 
-##### <a id="advertisementByIdFromUser"> Get all advertisements From User
-```
-    http://localhost:8600/api/v1/management/user_role/alladvertisements
-    Bearer Token : Access Token of User from Keycloak 
+| Service | URL | Default credentials (local development only) |
+|---|---|---|
+| Keycloak | http://localhost:8181 | `admin` / `admin` |
+| RabbitMQ management | http://localhost:15672 | `rabbitmq` / `123456` |
+
+You can override them with the environment variables `KEYCLOAK_ADMIN`, `KEYCLOAK_ADMIN_PASSWORD`, `RABBITMQ_USER` and `RABBITMQ_PASS`. MySQL is not included in the compose file, so install and start it separately.
+
+### 4. Start the services in this order
+
+```bash
+# 1. Discovery Server
+cd discoveryserver && mvn spring-boot:run
+
+# 2. Config Server
+cd configserver && mvn spring-boot:run
+
+# 3. API Gateway
+cd api-gateway && mvn spring-boot:run
+
+# 4. Business services (any order)
+cd user-service && mvn spring-boot:run
+cd advertisement-service && mvn spring-boot:run
+cd management-service && mvn spring-boot:run
+cd report-service && mvn spring-boot:run
 ```
 
-### Screenshots
+Run each command in its own terminal, from the project root.
 
-<details>
-<summary>Click here to show the screenshots of project</summary>
-    <p> Figure 1 </p>
-    <img src ="screenshots/keycloak_1.PNG">
-    <p> Figure 2 </p>
-    <img src ="screenshots/keycloak_2.PNG">
-    <p> Figure 3 </p>
-    <img src ="screenshots/keycloak_3.PNG">
-    <p> Figure 4 </p>
-    <img src ="screenshots/keycloak_4.PNG">
-    <p> Figure 5 </p>
-    <img src ="screenshots/keycloak_5.PNG">
-    <p> Figure 6 </p>
-    <img src ="screenshots/keycloak_6.PNG">
-    <p> Figure 7 </p>
-    <img src ="screenshots/keycloak_7.PNG">
-    <p> Figure 8 </p>
-    <img src ="screenshots/rabbitmq_1.PNG">
-    <p> Figure 9 </p>
-    <img src ="screenshots/rabbitmq_2.PNG">
-    <p> Figure 10 </p>
-    <img src ="screenshots/rabbitmq_3.PNG">
-    <p> Figure 11 </p>
-    <img src ="screenshots/rabbitmq_4.PNG">
-</details>   
+- Eureka dashboard: **http://localhost:8761**
+- API Gateway: **http://localhost:8600**
+
+---
+
+## ⚙️ Configuration
+
+Each service imports its configuration from the Config Server (`http://localhost:9191`) on startup. The centralized configuration files (datasource, Keycloak settings, RabbitMQ settings, service ports) live under:
+
+```text
+configserver/src/main/resources/configurations/
+```
+
+Before running the project, replace the placeholder values with your own environment values:
+
+| Setting | What to provide |
+|---|---|
+| MySQL | connection URL, username and password |
+| Keycloak | realm, auth server URL and client credentials |
+| RabbitMQ | host, username and password |
+
+> 🔒 The repository contains placeholder values only. Never commit real passwords, client secrets or tokens.
+
+---
+
+## 🔀 API Routing (API Gateway)
+
+| Route | Path | Target service |
+|---|---|---|
+| Users | `/api/v1/users/*` | `user-service` |
+| Reports | `/api/v1/reports/*` | `report-service` |
+| Advertisement / Management | `/api/**` | `advertisement-service`, `management-service` |
+
+---
+
+## 📁 Project Structure
+
+```text
+SpringBootMicroservices/
+├── discoveryserver/          # Eureka service discovery server
+├── configserver/             # Spring Cloud Config server
+├── api-gateway/              # Spring Cloud Gateway (routing)
+├── user-service/             # User management microservice
+├── advertisement-service/    # Advertisement management microservice
+├── management-service/       # Management microservice
+├── report-service/           # Report generation microservice
+├── docker-compose.yml        # Keycloak and RabbitMQ for local development
+└── pom.xml                   # Parent Maven module
+```
+
+---
+
+## 📸 Screenshots
+
+<!-- Add your screenshots in docs/screenshots/ then remove this comment line and the closing one below.
+
+| Eureka dashboard | API Gateway request |
+|---|---|
+| ![Eureka dashboard](docs/screenshots/eureka.png) | ![API Gateway request](docs/screenshots/gateway.png) |
+
+-->
+
+---
+
+## 👩‍💻 Author
+
+**Raja Aifa**
+
+🎓 Professional Master's Degree in Web Services and Multimedia, ISITCOM (Higher Institute of Computer Science and Communication Technologies of Hammam Sousse), Tunisia
+
+---
+
+## 📜 License
+
+This project is intended for educational purposes.
